@@ -1,0 +1,31 @@
+#INCAR for CHGCAR and WAVECAR calculation for ML_DFT
+PREC = Normal
+ALGO = Fast
+EDIFF = 1e-06
+ENCUT = 600
+ISIF = 0
+
+ISMEAR = 0
+SIGMA =0.05 
+
+LREAL = Auto
+NELM = 150
+NELMIN = 5
+LORBIT = 11
+
+IBRION = -1
+POTIM=1.0
+NSW = 0
+LWAVE= .TRUE.
+LCHARG= .TRUE.
+GGA=PE
+
+# DFT-D3
+LVDW=.TRUE.
+IVDW=11
+
+# IDIPOL=3
+# LDIPOL=.TRUE.
+# EFIELD=0.1 
+
+

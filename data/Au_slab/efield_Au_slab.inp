@@ -1,0 +1,116 @@
+###########################################
+############### Input file ################
+###########################################
+@set RUN_TYPE      ENERGY
+@SET CHARGE        0
+@SET CUTOFF        800
+@SET RELCUTOFF     40
+@SET SCF_CONV      1.0E-6
+@SET MAX_SCF       36
+@SET FUNCTIONAL    PBE
+@SET PROJECT       efield_Au-slab
+@SET POSITION_FILE Au_slab.xyz
+@SET CELL          
+
+
+&FORCE_EVAL
+  METHOD QS
+    &DFT
+    BASIS_SET_FILE_NAME BASIS_MOLOPT
+    POTENTIAL_FILE_NAME GTH_POTENTIALS
+    CHARGE              ${CHARGE}
+
+    &MGRID
+      CUTOFF       ${CUTOFF}
+      REL_CUTOFF   ${RELCUTOFF}
+    &END MGRID
+
+    &QS
+       METHOD GPW
+       EPS_DEFAULT 1.0E-10
+       EXTRAPOLATION ASPC
+    &END QS
+
+    &POISSON
+      PERIODIC XY
+      POISSON_SOLVER MT
+    &END POISSON
+
+    &SCF
+      MAX_SCF ${MAX_SCF}                                                                                                                                                                                                                                                         
+      EPS_SCF ${SCF_CONV} #Convergence threshold of density matrix of inner SCF
+      &OT ON
+        MINIMIZER DIIS
+        PRECONDITIONER FULL_SINGLE_INVERSE
+      &END OT
+      &OUTER_SCF
+        MAX_SCF 10
+      &END OUTER_SCF
+      &PRINT
+        &RESTART OFF #Do not generate wfn file to suppress meaningless I/O cost
+        &END RESTART
+      &END PRINT
+    &END SCF
+
+    &XC
+      &XC_FUNCTIONAL ${FUNCTIONAL}
+      &END XC_FUNCTIONAL
+    &END XC
+
+    &PERIODIC_EFIELD
+      INTENSITY  0.01945
+      POLARISATION  0.0 0.0 1.0
+    &END PERIODIC_EFIELD
+
+    &PRINT
+      &E_DENSITY_CUBE
+        NGAUSS  200
+        &EACH
+         JUST_ENERGY 1
+        &END EACH
+      &END E_DENSITY_CUBE
+      &V_HARTREE_CUBE
+        &EACH
+         JUST_ENERGY 1
+        &END EACH
+      &END V_HARTREE_CUBE
+      &TOT_DENSITY_CUBE
+        &EACH
+          JUST_ENERGY 1
+        &END EACH
+      &END TOT_DENSITY_CUBE
+      &EFIELD_CUBE
+        &EACH
+          JUST_ENERGY 1
+        &END EACH
+      &END EFIELD_CUBE
+    &END PRINT
+
+  &END DFT
+
+  &SUBSYS
+    &CELL
+      ABC      ${CELL}
+      PERIODIC  XY
+      MULTIPLE_UNIT_CELL  1 1 1
+    &END CELL
+
+    &TOPOLOGY
+      COORD_FILE_NAME ${POSITION_FILE}
+      COORDINATE XYZ
+    &END TOPOLOGY
+
+    &KIND Au
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q11
+    &END KIND
+    
+  &END SUBSYS
+&END FORCE_EVAL
+
+&GLOBAL
+  PROJECT ${PROJECT}
+  RUN_TYPE ${RUN_TYPE}
+  PRINT_LEVEL MEDIUM
+  EXTENDED_FFT_LENGTHS T
+&END GLOBAL
