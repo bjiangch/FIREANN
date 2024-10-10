@@ -1,5 +1,5 @@
 import torch
-from get_neigh import *
+# from get_neigh import *
 from torch.autograd.functional import jacobian,hessian
 
 class Calculator():
@@ -10,6 +10,8 @@ class Calculator():
         pes.to(device).to(torch_dtype)
         # set the eval mode
         pes.eval()
+        print("initstd", pes.nnmod.initstd, flush=True)
+        print("initpot", pes.nnmod.initpot, flush=True)
         self.cutoff=pes.cutoff
         self.pes=torch.jit.optimize_for_inference(pes)
 
@@ -54,6 +56,15 @@ class Calculator():
         varene=torch.sum(atomic_energy.view(-1,cart.shape[1]),dim=1)
         stress=torch.autograd.grad(torch.sum(varene),disp_cell,create_graph=create_graph)[0]/(cell[:,0,0]*cell[:,1,1]*cell[:,2,2])
         return varene,stress
+
+    def get_charge_response(self,cell,disp_cell,cart,ef,index_cell,neigh_list,shifts,species,create_graph=False):
+        dummy_index = (species==torch.max(species)).nonzero()
+        atomic_charge=self.pes(cell,disp_cell,cart,ef,index_cell,neigh_list,shifts,species)
+        # print(atomic_charge, flush=True)
+        varene = atomic_charge[dummy_index].view(-1)
+        # print(varene)
+        return varene
+        
 #===============bug need to be fixed in jit for vectorize=======================================     
     #def get_pol(self,cart,ef,neigh_list,shifts,species,create_graph=False):
     #    pol=jacobian(lambda x: self.get_dipole_for_pol(cart,x,neigh_list,shifts,species),ef,\

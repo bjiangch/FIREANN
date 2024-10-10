@@ -19,7 +19,8 @@ def neighbor_pairs(pbc, coordinates, species, cell, cutoff:float, neigh_atoms:in
         cutoff (float): the cutoff inside which atoms are considered pairs
         shifts (:class:`torch.Tensor`): tensor of shape (?, 3) storing shifts
     """
-    padding_mask = ( species == -1)
+    padding_mask = ( species == -1 )
+    dummy_mask = (species == torch.max(species))
     num_mols = padding_mask.shape[0]
     num_atoms = padding_mask.shape[1]
     coordinates = coordinates.detach()
@@ -47,6 +48,8 @@ def neighbor_pairs(pbc, coordinates, species, cell, cutoff:float, neigh_atoms:in
     norm(2, -1)
     padding_mask = padding_mask[:, p12_all.view(-1)].view(num_mols, 2, -1).any(1)
     distances.masked_fill_(padding_mask, math.inf)  # dim=num_mols*(nshift*natom*natom)
+    dummy_mask = dummy_mask[:, p12_all.view(-1)].view(num_mols, 2, -1)[:, 1, :]
+    distances.masked_fill_(dummy_mask, math.inf) 
     atom_index=torch.zeros((2,num_mols,num_atoms*neigh_atoms),device=cell.device,dtype=torch.int32)
     shifts=-1e11*torch.ones((num_mols,num_atoms*neigh_atoms,3),device=cell.device)
     maxneigh=0 

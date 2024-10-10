@@ -13,13 +13,20 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 # open a file for output information in iterations
 fout=open('nn.err','w')
 # save the dimension of each prop
-Prop_dict={"Energy":1,"Dipole":3,"POL":9}
+# Prop_dict={"Energy":1,"Dipole":3,"POL":9}
 # the whole list of properties
-Prop_full_list=["Energy",["Dipole","Force"],"POL"]
+# Prop_full_list=["Energy",["Dipole","Force"],"POL"]
+Prop_full_list = ["ChargeDensity"]
 
 # global parameters for input_nn
-Prop_list_init={"Energy":0.1,"Dipole":0.1,"Force":50,"POL":0.1}
-Prop_list_final={"Energy":0.1,"Dipole":0.1,"Force":0.5,"POL":0.1}
+# Prop_list_init={"Energy":0.1,"Dipole":0.1,"Force":50,"POL":0.1}
+# Prop_list_final={"Energy":0.1,"Dipole":0.1,"Force":0.5,"POL":0.1}
+Prop_list_init = {"ChargeDensity":1.0}
+Prop_list_final = {"ChargeDensity":1.0}
+Prop_dict={"ChargeDensity": 1000}
+num_grid_per_configuration=10000
+alpha = 1.0
+sigma = 100
 table_coor=0                   # 0: cartestion coordinates used 1: fraction coordinates used
 table_init=0                   # 1: a pretrained or restart  
 nblock = 1                     # the number of resduial NN blocks
@@ -131,10 +138,10 @@ nl.insert(0,norbit)
 oc_nl.insert(0,norbit)
 
 #=============================================================================
-folder_train=folder+"train/"
-folder_val=folder+"validation/"
+# folder_train=folder+"train/"
+# folder_val=folder+"validation/"
 # obtain the number of system
-folderlist=[folder_train,folder_val]
+# folderlist=[folder_train,folder_val]
 # read the configurations and physical properties
 # to oredr the Prop_list and the corresponding weight
 Prop_list=[]
@@ -148,8 +155,9 @@ for key in Prop_list_init.keys():
 start_table=None
 if "Force" in Prop_list_init.keys(): start_table=1
 
-numpoint,atom,mass,numatoms,scalmatrix,period_table,coor,ef,abprop,force=Read_data(folderlist,Prop_list,start_table=start_table)
-
+# numpoint,atom,mass,numatoms,scalmatrix,period_table,coor,ef,abprop,force=Read_data(folderlist,Prop_list,start_table=start_table)
+numpoint,atom,mass,numatoms,scalmatrix,period_table,coor,ef,abprop=Read_data(folder, Prop_dict, num_grid_per_configuration, alpha, sigma)
+force = None
 # to validate the number of properties equal to the number of read from datafile and set the corresponding weight
 nprop=0
 #Prop_list.remove("Force")
@@ -169,11 +177,15 @@ numatoms=np.array(numatoms,dtype=np.int64)
 # here to convert the abprop to torch tensor
 for i,iprop in enumerate(abprop):
     abprop[i]=np.array(iprop)
-    
+     
 initpot=0.0
 if "Energy" in Prop_list:
     initpot=np.sum(abprop[0][:])/np.sum(numatoms)
     abprop[0]=abprop[0]-initpot*numatoms.reshape(-1,1)
+initstd=1.0
+if "ChargeDensity" in Prop_list:
+    initstd = np.std(abprop[0][:].flatten())
+    abprop[0] = abprop[0] / initstd
 # get the total number configuration for train/val
 ntotpoint=0
 for ipoint in numpoint:

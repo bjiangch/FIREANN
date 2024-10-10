@@ -29,5 +29,5 @@ start_table,table_coor,neigh_atoms,batchsize,cutoff,device,np_dtype):
     cell_rank=torch.from_numpy(cell_rank)
     numatoms_rank=torch.from_numpy(numatoms_rank)
     pbc_rank=torch.from_numpy(np.array(period_table[range_rank[0]:range_rank[1]],dtype=np.int64))
-    shifts_rank,atom_index_rank=get_batch_neigh(com_coor_rank,cell_rank,species_rank,pbc_rank,neigh_atoms,batchsize,cutoff,device)
+    shifts_rank,atom_index_rank=get_batch_neigh(com_coor_rank,cell_rank,species_rank,pbc_rank,neigh_atoms,8,cutoff,device)
     return com_coor_rank,order_force_rank,numatoms_rank,species_rank,atom_index_rank,shifts_rank

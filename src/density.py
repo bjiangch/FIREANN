@@ -43,6 +43,21 @@ class GetDensity(torch.nn.Module):
         inta=self.inta.index_select(0,species_)
         radial=torch.exp(inta*torch.square(distances[:,None]-rs))
         return radial
+        
+    # def gaussian(self,distances,species_):
+        # Tensor: rs[nwave],inta[nwave] 
+        # Tensor: distances[neighbour*numatom*nbatch,1]
+        # return: radial[neighbour*numatom*nbatch,nwave]
+        # distances=distances.view(-1,1)
+        # radial=torch.empty((distances.shape[0],self.rs.shape[1]),dtype=distances.dtype,device=distances.device)
+        # for itype in range(self.rs.shape[0]):
+        #     mask = (species_ == itype)
+        #     ele_index = torch.nonzero(mask).view(-1)
+        #     if ele_index.shape[0]>0:
+        #         part_radial=torch.exp(self.inta[itype:itype+1]*torch.square \
+        #         (distances.index_select(0,ele_index)-self.rs[itype:itype+1]))
+        #         radial.masked_scatter_(mask.view(-1,1),part_radial)
+        # return radial
     
     def cutoff_cos(self,distances):
         # assuming all elements in distances are smaller than cutoff
@@ -93,10 +108,12 @@ class GetDensity(torch.nn.Module):
         orb_coeff[mask,:]=self.params.index_select(0,species[torch.nonzero(mask).view(-1)])
         hyper=self.hyper.index_select(0,self.index_para.to(torch.long))
         density,worbital=self.obtain_orb_coeff(0,totnatom,orbital,ef_orbital,atom_index12,orb_coeff,hyper)
+        # density=self.obtain_orb_coeff(0,totnatom,orbital,ef_orbital,atom_index12,orb_coeff,hyper)
         for ioc_loop, (_, m) in enumerate(self.ocmod.items()):
             orb_coeff = orb_coeff + m(density,species)
             orbital=orbital+worbital.index_select(0,atom_index12[1])*dcut[:,None,None]
             density,worbital = self.obtain_orb_coeff(ioc_loop+1,totnatom,orbital,ef_orbital,atom_index12,orb_coeff,hyper)
+            # density = self.obtain_orb_coeff(ioc_loop+1,totnatom,orbital,ef_orbital,atom_index12,orb_coeff,hyper)
         return density
  
     def obtain_orb_coeff(self,iteration:int,totnatom:int,orbital,ef_orbital,atom_index12,orb_coeff,hyper):
@@ -106,4 +123,5 @@ class GetDensity(torch.nn.Module):
         hyper_worbital=oe.contract("ijk,jkm -> ijm",ef_orbital,hyper,backend="torch").contiguous()
         density=torch.sum(torch.square(hyper_worbital),dim=1)       
         return density,ef_orbital
+        # return density
 

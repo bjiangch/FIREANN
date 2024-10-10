@@ -1,4 +1,4 @@
-subroutine get_neigh(cart,coor,atomindex,shifts,maxneigh,numatom,scutnum)
+subroutine get_neigh(cart,dummy_mask,coor,atomindex,shifts,maxneigh,numatom,scutnum)
      use constant
      use initmod
      implicit none
@@ -10,6 +10,7 @@ subroutine get_neigh(cart,coor,atomindex,shifts,maxneigh,numatom,scutnum)
      integer(kind=intype),allocatable :: index_numrs(:,:,:,:,:)
      integer(kind=intype),allocatable :: index_rs(:,:,:)
      real(kind=typenum),intent(in) :: cart(3,numatom)
+     real(kind=typenum),intent(in) :: dummy_mask(numatom)
      real(kind=typenum),intent(out) :: shifts(3,maxneigh)
      real(kind=typenum),intent(out) :: coor(3,numatom)
      real(kind=typenum) :: tmp
@@ -86,7 +87,7 @@ subroutine get_neigh(cart,coor,atomindex,shifts,maxneigh,numatom,scutnum)
                  l=index_numrs(2,i,i1,i2,i3)
                  tmp1=imageatom(:,j,l)-coor(:,iatom)
                  tmp=dot_product(tmp1,tmp1)
-                 if(tmp<=rcsq) then
+                 if(tmp<=rcsq .and. dummy_mask(j) <= 0d0) then
                    scutnum=scutnum+1
                    atomindex(:,scutnum)=[iatom-1,j-1]
                    shifts(:,scutnum)=shiftvalue(:,l)

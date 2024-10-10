@@ -31,6 +31,8 @@ elif "Force" in Prop_list and "Dipole" not in Prop_list:
     from src.Property_E_F import *
 elif "Force" not in Prop_list and "Dipole" in Prop_list: 
     from src.Property_E_DM import *
+if "ChargeDensity" in Prop_list:
+    from src.Property_ChargeDensity import *
     
 if "POL" in Prop_list and len(Prop_list)==1:
     from src.Property_Pol import *
@@ -73,10 +75,13 @@ for ioc_loop in range(oc_loop):
 #=======================density======================================================
 getdensity=GetDensity(rs,inta,cutoff,neigh_atoms,nipsin,norbit,ocmod_list)
 #==============================nn module=================================
-nnmod=NNMod(maxnumtype,outputneuron,atomtype,nblock,list(nl),dropout_p,actfun,initpot=initpot,table_norm=table_norm)
+nnmod=NNMod(maxnumtype,outputneuron,atomtype,nblock,list(nl),dropout_p,actfun,initpot=initpot,initstd=initstd,table_norm=table_norm)
 #=========================create the module=========================================
 print_info=Print_Info(fout,end_lr,train_nele,val_nele,Prop_list)
-Prop_class=Property(getdensity,nnmod).to(device)  # to device must be included
+if "ChargeDensity" in Prop_list:
+    Prop_class=Property(getdensity,nnmod).to(device)
+else:
+    Prop_class=Property(getdensity,nnmod).to(device)  # to device must be included
 if Property_Pol is not None:
     Prop_Pol=Property_Pol.Property(getdensity,nnmod).to(device)
 else:
@@ -98,7 +103,15 @@ else:
 get_loss=Get_Loss(index_prop,Prop_class,Prop_Pol)
 
 #define optimizer
+# for name, value in Prop_class.named_parameters():
+    # name = name.split(".")
+    # print(name)
+    # if name[2] == "ocmod" and name[5] == "X":
+        # value.requires_grad = False
+    # if name[1] == 'nnmod' and name[3] != "X":
+        # value.requires_grid = False
 optim=torch.optim.AdamW(Prop_class.parameters(), lr=start_lr, weight_decay=re_ceff)
+# optim=torch.optim.AdamW(filter(lambda p: p.requires_grad, Prop_class.parameters()), lr=start_lr, weight_decay=re_ceff)
 
 # learning rate scheduler 
 lr_scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(optim,factor=decay_factor,patience=patience_epoch,min_lr=end_lr)
@@ -131,7 +144,7 @@ if table_init==1:
 else:
     if rank==0: checkpoint(swa_model,"SWA_REANN.pth")
 for name, m in Prop_class.named_parameters():
-    print(name)
+    print(name, m.shape, m.requires_grad)
 #==========================================================
 Optimize(Epoch,print_epoch,ema_nbatch,weight_scheduler,scheduler,print_info,data_train,data_val,get_loss,swa_model,optim)
 if rank==0: 
