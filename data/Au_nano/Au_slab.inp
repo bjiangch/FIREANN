@@ -1,0 +1,106 @@
+###########################################
+############### Input file ################
+###########################################
+@set RUN_TYPE      ENERGY
+@SET CHARGE        0
+@SET CUTOFF        800
+@SET RELCUTOFF     40
+@SET SCF_CONV      1.0E-6
+@SET MAX_SCF       36
+@SET FUNCTIONAL    PBE
+@SET PROJECT       Au-nano
+@SET POSITION_FILE Au_nano.xyz
+@SET CELL  30.0  30.0  60.0
+&FORCE_EVAL
+  METHOD QS
+    &DFT
+    BASIS_SET_FILE_NAME BASIS_MOLOPT
+    POTENTIAL_FILE_NAME GTH_POTENTIALS
+    CHARGE              ${CHARGE}
+    UKS
+
+    &MGRID
+      CUTOFF       ${CUTOFF}
+      REL_CUTOFF   ${RELCUTOFF}
+    &END MGRID
+
+    &QS
+       METHOD GPW
+       EPS_DEFAULT 1.0E-10
+       EXTRAPOLATION ASPC
+    &END QS
+
+    &POISSON
+      PERIODIC NONE
+      POISSON_SOLVER WAVELET
+    &END POISSON
+
+    &SCF
+      MAX_SCF 200                                                                                                                                                                                                                                                         
+      EPS_SCF ${SCF_CONV} #Convergence threshold of density matrix of inner SCF
+      &DIAGONALIZATION
+          ALGORITHM STANDARD #Algorithm for diagonalization. DAVIDSON is faster for large systems
+      &END DIAGONALIZATION
+      &MIXING #How to mix old and new density matrices
+          METHOD BROYDEN_MIXING #PULAY_MIXING is also a good alternative
+          ALPHA 0.4 #Default. Mixing 40% of new density matrix with the old one
+          NBROYDEN 8 #Default is 4. Number of previous steps stored for the actual mixing scheme
+      &END MIXING
+      &SMEAR
+          METHOD FERMI_DIRAC
+          ELECTRONIC_TEMPERATURE 300 #Electronic temperature of Fermi-Dirac smearing in K
+      &END SMEAR
+      ADDED_MOS    30 #Number of virtual MOs to solve
+      &PRINT
+        &RESTART OFF #Do not generate wfn file to suppress meaningless I/O cost
+        &END RESTART
+      &END PRINT
+    &END SCF
+
+    &XC
+      &XC_FUNCTIONAL ${FUNCTIONAL}
+      &END XC_FUNCTIONAL
+    &END XC
+
+    &EFIELD
+      INTENSITY  0.0
+      POLARISATION  0.0 0.0 1.0
+    &END EFIELD
+
+    &PRINT
+      &E_DENSITY_CUBE
+        NGAUSS  200
+        &EACH
+         JUST_ENERGY 1
+        &END EACH
+      &END E_DENSITY_CUBE
+      
+    &END PRINT
+
+  &END DFT
+
+  &SUBSYS
+    &CELL
+      ABC      ${CELL}
+      PERIODIC  NONE
+    &END CELL
+
+    &TOPOLOGY
+      COORD_FILE_NAME ${POSITION_FILE}
+      COORDINATE XYZ
+    &END TOPOLOGY
+
+    &KIND Au
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      POTENTIAL GTH-PBE-q11
+    &END KIND
+    
+  &END SUBSYS
+&END FORCE_EVAL
+
+&GLOBAL
+  PROJECT ${PROJECT}
+  RUN_TYPE ${RUN_TYPE}
+  PRINT_LEVEL MEDIUM
+  # EXTENDED_FFT_LENGTHS T
+&END GLOBAL
