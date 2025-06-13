@@ -1,0 +1,129 @@
+###########################################
+############### Input file ################
+###########################################
+@set RUN_TYPE      ENERGY_FORCE
+@SET CHARGE        0
+@SET CUTOFF        800
+@SET RELCUTOFF     40
+@SET SCF_CONV      3.0E-6
+@SET MAX_SCF       36
+@SET FUNCTIONAL    PBE
+@SET PROJECT       electrolyte
+@SET POSITION_FILE electrolyte.xyz          
+
+&FORCE_EVAL
+  METHOD QS
+    &DFT
+    BASIS_SET_FILE_NAME BASIS_MOLOPT_UZH
+    POTENTIAL_FILE_NAME POTENTIAL_UZH
+    CHARGE              ${CHARGE}
+
+    &MGRID
+      CUTOFF       ${CUTOFF}
+      REL_CUTOFF   ${RELCUTOFF}
+    &END MGRID
+
+    &QS
+       METHOD GPW
+       EPS_DEFAULT 1.0E-10
+       EXTRAPOLATION ASPC
+    &END QS
+
+    &POISSON
+      PERIODIC XYZ
+      PSOLVER PERIODIC
+    &END POISSON
+
+    &SCF
+      SCF_GUESS ATOMIC
+      MAX_SCF ${MAX_SCF} 
+      EPS_SCF ${SCF_CONV} #Convergence threshold of density matrix of inner SCF
+      &OT ON
+        MINIMIZER DIIS
+        PRECONDITIONER FULL_SINGLE_INVERSE
+      &END OT
+      &OUTER_SCF
+        MAX_SCF 10   
+        EPS_SCF ${SCF_CONV}
+      &END OUTER_SCF
+    &END SCF
+
+    &XC
+      &XC_FUNCTIONAL ${FUNCTIONAL}
+      &END XC_FUNCTIONAL
+      &VDW_POTENTIAL
+        POTENTIAL_TYPE PAIR_POTENTIAL
+        &PAIR_POTENTIAL
+          PARAMETER_FILE_NAME dftd3.dat
+          TYPE DFTD3
+          REFERENCE_FUNCTIONAL PBE
+          #CALCULATE_C9_TERM T #Calculate C9-related three-body term, more accurate for large system
+        &END PAIR_POTENTIAL
+      &END VDW_POTENTIAL
+    &END XC
+    
+    &PERIODIC_EFIELD
+      INTENSITY 0.0
+      POLARISATION 0.0 0.0 1.0
+    &END PERIODIC_EFIELD
+
+    &PRINT
+      &E_DENSITY_CUBE
+        &EACH
+         JUST_ENERGY 1
+        &END EACH
+      &END E_DENSITY_CUBE
+    &END PRINT
+
+  &END DFT
+
+  &SUBSYS
+    &CELL
+      A     1.1540000000000000E+01    0.0000000000000000E+00    0.0000000000000000E+00
+      B     0.0000000000000000E+00    1.1540000000000000E+01    0.0000000000000000E+00
+      C     0.0000000000000000E+00    0.0000000000000000E+00    3.5000000000000000E+01
+      PERIODIC  XYZ
+    &END CELL
+
+    &TOPOLOGY
+      COORD_FILE_NAME ${POSITION_FILE}
+      COORDINATE XYZ
+    &END TOPOLOGY
+
+    &KIND Na                                                                                                                                              
+      ELEMENT Na
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q1
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+
+    &KIND Cl
+      ELEMENT Cl
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q7
+      POTENTIAL GTH-PBE-q7
+    &END KIND
+
+    &KIND O
+      ELEMENT O
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q6
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+
+    &KIND H
+      ELEMENT H
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q1
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+    
+  &END SUBSYS
+
+  &PRINT
+    &FORCES ON
+    &END FORCES
+  &END PRINT
+&END FORCE_EVAL
+
+&GLOBAL
+  PROJECT ${PROJECT}
+  RUN_TYPE ${RUN_TYPE}
+  PRINT_LEVEL LOW
+&END GLOBAL
