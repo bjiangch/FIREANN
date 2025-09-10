@@ -1,0 +1,44 @@
+# required parameters 
+  Prop_list_init={"ChargeDensity":1.0}
+  Prop_list_final={"ChargeDensity":1.0}
+  Prop_dict={"ChargeDensity":1000}
+  num_grid_per_configuration = 1000
+  alpha = 0.0
+  sigma = 100
+  table_coor = 0                 # table_coor   0 for cartesian coordinates and 1 for direct coordinates
+  nl = [128,128]          # neural network architecture   
+ # nl = [512,512,512,512]          # neural network architecture   
+  nblock =  1
+  dropout_p=[0.0,0.0,0.0,0.0]
+  table_init = 0         # 1 used for load parameters from pth 
+  nkpoint=1                      # number of nkpoint NNs was employed to representation polarizability
+# NN epoch and NN optimize parameters
+  Epoch=20000                     # max iterations epoch                 
+  patience_epoch = 50            # pre initial learning rate epoch   
+  decay_factor = 0.5            # Factor by which the learning rate will be reduced. new_lr = lr * factor.
+  start_lr = 1e-3              # initial learning rate
+  end_lr =1e-6                 # final learning rate
+  re_ceff = 0                # factor for regularization
+# wave epoch and wave optimize parameters
+  ratio = 0.9                    # ratio for training
+# =====================================================================
+  batchsize_train = 32              # batch_size
+  batchsize_val = 32               # batch_size
+  find_unused=True
+#========================queue_size sequence for laod data into gpu
+  queue_size=10
+  print_epoch=1
+  table_norm=True
+  activate = 'Relu_like'
+  DDP_backend='nccl'
+  dtype="float32"
+#===========param for orbital coefficient ===============================================
+     oc_nl = [64,64]          # neural network architecture   
+     oc_nblock = 1
+     oc_dropout_p=[0.0,0.0,0.0,0]
+     oc_activate = 'Relu_like'
+   #========================queue_size sequence for laod data into gpu
+     oc_table_norm=True
+     oc_loop=0
+#========================floder used to save the data========================
+  folder="/data1/home/hhu17/cqfeng/response/data/Au_NaCl/all_data/"
